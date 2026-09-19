@@ -169,3 +169,4 @@ html[data-theme=dark] .how-note{color:#b9c5ce;background:rgba(255,255,255,.045)}
 html[data-theme=dark] .opening-note{color:#f3eadb;background:#2b2418}
 @media(max-width:900px){.opening-intro h2{white-space:normal}.opening-note{grid-column:1;grid-row:auto}}
 .rankings-heading{margin:44px 0 0;color:#fff;font-size:1.5rem}.rankings-heading+.why-join__rankings{margin-top:20px}.why-join__rankings .kpi a{color:inherit;text-decoration:underline;text-decoration-color:#687785;text-underline-offset:3px}.why-join__rankings .kpi a:hover{color:#fff}.person__copy h3 a{color:inherit;text-underline-offset:4px}
+.why-join .why-join__rankings{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:900px){.why-join .why-join__rankings{grid-template-columns:repeat(2,minmax(0,1fr))}}
