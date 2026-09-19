@@ -1,3 +1,16 @@
+const revealLinkedFaq=()=>{
+  let id;try{id=decodeURIComponent(location.hash.slice(1))}catch(error){return}
+  const target=document.getElementById(id);
+  if(target?.matches('.faq details')){target.open=true;target.scrollIntoView({block:'start'})}
+};
+addEventListener('hashchange',revealLinkedFaq);
+revealLinkedFaq();
+document.addEventListener('click',event=>{
+  const link=event.target.closest('a[href]');
+  if(!link)return;
+  const url=new URL(link.href);
+  if(url.origin===location.origin&&url.pathname===location.pathname&&url.hash===location.hash)revealLinkedFaq();
+});
 const toggle=document.querySelector('.nav-toggle');
 const nav=document.querySelector('.site-nav');
 const head=document.querySelector('.site-head');
