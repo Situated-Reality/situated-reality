@@ -33,7 +33,46 @@ if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
   addEventListener('scroll',move,{passive:true});move();
 }
 const search=document.querySelector('[data-publication-search]');
-if(search)search.addEventListener('input',()=>{const q=search.value.toLowerCase().trim();document.querySelectorAll('.pub-list li').forEach(li=>li.hidden=q&&!li.textContent.toLowerCase().includes(q));document.querySelectorAll('.pub-year').forEach(y=>y.hidden=![...y.querySelectorAll('li')].some(li=>!li.hidden))});
+if(search){
+  const publicationToggle=document.querySelector('[data-publication-toggle]');
+  const publicationStatus=document.querySelector('[data-publication-status]');
+  const publications=[...document.querySelectorAll('.pub-list > li')];
+  const publicationYears=[...document.querySelectorAll('.pub-year')];
+  const isFullPaper=item=>['conference','journal'].includes(item.dataset.publicationType);
+  let showAllPublications=false;
+  const filterPublications=()=>{
+    const query=search.value.toLowerCase().trim();
+    const eligible=publications.filter(item=>showAllPublications||isFullPaper(item));
+    publications.forEach(item=>{
+      const inScope=showAllPublications||isFullPaper(item);
+      item.hidden=!inScope||!item.textContent.toLowerCase().includes(query);
+    });
+    const visible=publications.filter(item=>!item.hidden);
+    visible.forEach((item,index)=>item.value=visible.length-index);
+    publicationYears.forEach(year=>{
+      const firstVisible=year.querySelector('.pub-list > li:not([hidden])');
+      year.hidden=!firstVisible;
+      if(firstVisible)year.querySelector('.pub-list').start=firstVisible.value;
+    });
+    if(publicationToggle){
+      publicationToggle.hidden=false;
+      publicationToggle.setAttribute('aria-expanded',String(showAllPublications));
+      publicationToggle.textContent=showAllPublications?'Show full papers only':'Show all publications';
+    }
+    if(publicationStatus){
+      const label=showAllPublications?'publications':'full papers';
+      publicationStatus.textContent=visible.length
+        ? `Showing ${visible.length}${query?` of ${eligible.length}`:''} ${label}.`
+        : `No matching ${label}.${showAllPublications?' Try another search.':' Try another search or show all publications.'}`;
+    }
+  };
+  search.addEventListener('input',filterPublications);
+  publicationToggle?.addEventListener('click',()=>{
+    showAllPublications=!showAllPublications;
+    filterPublications();
+  });
+  filterPublications();
+}
 
 const cinematic=document.querySelector('[data-research-cinematic]');
 if(cinematic){
