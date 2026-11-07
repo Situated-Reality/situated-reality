@@ -38,13 +38,13 @@ if(search){
   const publicationStatus=document.querySelector('[data-publication-status]');
   const publications=[...document.querySelectorAll('.pub-list > li')];
   const publicationYears=[...document.querySelectorAll('.pub-year')];
-  const isFullPaper=item=>['conference','journal'].includes(item.dataset.publicationType);
+  const isDefaultPublication=item=>['conference','journal','thesis'].includes(item.dataset.publicationType);
   let showAllPublications=false;
   const filterPublications=()=>{
     const query=search.value.toLowerCase().trim();
-    const eligible=publications.filter(item=>showAllPublications||isFullPaper(item));
+    const eligible=publications.filter(item=>showAllPublications||isDefaultPublication(item));
     publications.forEach(item=>{
-      const inScope=showAllPublications||isFullPaper(item);
+      const inScope=showAllPublications||isDefaultPublication(item);
       item.hidden=!inScope||!item.textContent.toLowerCase().includes(query);
     });
     const visible=publications.filter(item=>!item.hidden);
@@ -57,10 +57,10 @@ if(search){
     if(publicationToggle){
       publicationToggle.hidden=false;
       publicationToggle.setAttribute('aria-expanded',String(showAllPublications));
-      publicationToggle.textContent=showAllPublications?'Show full papers only':'Show all publications';
+      publicationToggle.textContent=showAllPublications?'Show full papers & theses':'Show all publications';
     }
     if(publicationStatus){
-      const label=showAllPublications?'publications':'full papers';
+      const label=showAllPublications?'publications':'entries (full papers and PhD theses)';
       publicationStatus.textContent=visible.length
         ? `Showing ${visible.length}${query?` of ${eligible.length}`:''} ${label}.`
         : `No matching ${label}.${showAllPublications?' Try another search.':' Try another search or show all publications.'}`;

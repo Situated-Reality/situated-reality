@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
 // Run against a local static server; no network requests or publishing are needed.
 const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:4173';
 const publicationURL = new URL('/publications.html', baseURL).href;
-const fullTypes = new Set(['conference', 'journal']);
+const defaultTypes = new Set(['conference', 'journal', 'thesis']);
 
 async function visibleEntries(page) {
   return page.locator('.pub-list > li:visible').evaluateAll(items =>
@@ -16,10 +16,10 @@ async function visibleEntries(page) {
   );
 }
 
-async function assertList(page, count, fullOnly) {
+async function assertList(page, count, defaultOnly) {
   const entries = await visibleEntries(page);
   assert.equal(entries.length, count, 'Visible publication count');
-  if (fullOnly) assert.ok(entries.every(entry => fullTypes.has(entry.type)), 'Only conference/journal full papers should appear');
+  if (defaultOnly) assert.ok(entries.every(entry => defaultTypes.has(entry.type)), 'Only conference/journal full papers and PhD theses should appear');
   assert.deepEqual(entries.map(entry => entry.value), entries.map((_, index) => count - index), 'Visible bibliography numbering should be contiguous and descending');
   const status = page.locator('[data-publication-status]');
   assert.ok((await status.textContent()).includes(count ? String(count) : 'No matching'), 'Status should report the visible count or empty state');
@@ -44,16 +44,17 @@ async function exerciseView(browser, viewport) {
     const all = await page.locator('.pub-list > li').evaluateAll(items => items.map(item => item.dataset.publicationType));
     assert.equal(all.length, 39);
     assert.ok(all.every(Boolean), 'Every bibliography entry needs an explicit type');
-    assert.equal(all.filter(type => fullTypes.has(type)).length, 21);
+    assert.equal(all.filter(type => defaultTypes.has(type)).length, 22);
 
     const toggle = page.locator('[data-publication-toggle]');
     const search = page.locator('[data-publication-search]');
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
-    await assertList(page, 21, true);
+    await assertList(page, 22, true);
     const initial = await visibleEntries(page);
-    for (const excluded of ['Can People Distinguish Human and AI Agency', 'Towards Body-Centric Gestural Interaction', 'Dagstuhl Seminar 24232', 'stories of SIGCHI’s influence']) {
+    for (const excluded of ['Can People Distinguish Human and AI Agency', 'Dagstuhl Seminar 24232', 'stories of SIGCHI’s influence']) {
       assert.ok(!initial.some(entry => entry.text.includes(excluded)), `${excluded} should be hidden by default`);
     }
+    assert.ok(initial.some(entry => entry.type === 'thesis' && entry.text.includes('Towards Body-Centric Gestural Interaction')), 'PhD thesis should appear by default');
     assert.ok(initial.some(entry => entry.text.includes('Auto-Paizo Games') && entry.text.includes('Interactivity Audience Award')), 'An interactivity award must not misclassify a full journal paper');
     assert.equal(await page.locator('.pub-year').evaluateAll(years => years.find(year => year.querySelector('h2').textContent.trim() === '2022').getClientRects().length > 0), false);
     await assertNoOverflow(page, `${viewport.width}px default`);
@@ -71,7 +72,7 @@ async function exerciseView(browser, viewport) {
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
     await assertList(page, 0, true);
     await search.fill('');
-    await assertList(page, 21, true);
+    await assertList(page, 22, true);
 
     await search.fill('Auto-Paizo Games');
     await assertList(page, 1, true);
@@ -90,13 +91,13 @@ async function exerciseView(browser, viewport) {
     await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
     await assertNoOverflow(page, `${viewport.width}px dark expanded`);
     await toggle.click();
-    await assertList(page, 21, true);
+    await assertList(page, 22, true);
     await assertNoOverflow(page, `${viewport.width}px dark default`);
 
     await toggle.click();
     await page.reload();
-    assert.equal(await page.locator('[data-publication-toggle]').getAttribute('aria-expanded'), 'false', 'Reload must restore full-papers-only mode');
-    await assertList(page, 21, true);
+    assert.equal(await page.locator('[data-publication-toggle]').getAttribute('aria-expanded'), 'false', 'Reload must restore full-papers-and-theses mode');
+    await assertList(page, 22, true);
     assert.deepEqual(errors, [], 'No JavaScript errors');
     console.log(`PASS ${viewport.width}×${viewport.height}: filtering, search, numbering, keyboard, dark theme and reload`);
   } finally {
@@ -114,9 +115,9 @@ async function main() {
       const page = await context.newPage();
       await page.goto(publicationURL);
       const entries = await visibleEntries(page);
-      assert.equal(entries.length, 21, 'Without JavaScript, default view still contains 21 full papers');
-      assert.ok(entries.every(entry => fullTypes.has(entry.type)), 'No supplemental entries should flash before JavaScript runs');
-      assert.deepEqual(entries.map(entry => entry.value), entries.map((_, index) => 21 - index), 'Static fallback numbering should match the default view');
+      assert.equal(entries.length, 22, 'Without JavaScript, default view still contains 22 full papers and theses');
+      assert.ok(entries.every(entry => defaultTypes.has(entry.type)), 'No supplemental entries should flash before JavaScript runs');
+      assert.deepEqual(entries.map(entry => entry.value), entries.map((_, index) => 22 - index), 'Static fallback numbering should match the default view');
       console.log('PASS JavaScript-disabled default view');
     } finally {
       await context.close();

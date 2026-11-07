@@ -186,3 +186,7 @@ html[data-theme=dark] .news-event,html[data-theme=dark] .news-recruitment{backgr
 .publication-filter-help,.publication-status{color:var(--muted);font-size:.92rem;line-height:1.6}.publication-filter-help{margin:0 0 8px;max-width:80ch}.publication-status{margin:0 0 24px;font-weight:650}
 html[data-theme=dark] .publication-toggle{background:#274c70}html[data-theme=dark] .publication-toggle[aria-expanded=true]{background:var(--teal);color:#07131f}
 @media(max-width:600px){.pub-tools{align-items:stretch}.pub-tools input{flex-basis:100%;max-width:none}.publication-toggle{width:100%;white-space:normal}}
+/* Consistent year/range and term labels across all teaching entries. */
+.course-date{display:grid;align-content:start;gap:5px;padding-top:4px;color:var(--yellow-ink);font:700 11px/1.5 var(--mono);letter-spacing:.1em;text-transform:uppercase}.course-date__year{white-space:nowrap}.course-date__year time{font:inherit;letter-spacing:inherit;color:inherit}.course-date__term{font-size:10px;letter-spacing:.06em}
+html[data-theme=dark] .teaching-group .course-date{color:#9b6200}html[data-theme=dark] .teaching-group .course{border-color:rgba(113,73,35,.16)}
+@media(max-width:600px){.teaching-group{padding:24px 20px}.course{gap:16px}.course-date{padding-top:0}}
