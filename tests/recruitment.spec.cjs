@@ -28,18 +28,39 @@ async function main() {
         });
         assert.deepEqual(await page.locator('img').evaluateAll(images => images.filter(image => !image.naturalWidth).map(image => image.src)), [], path + ': images load');
         if (['index.html', 'about.html', 'join-us/'].includes(path)) {
+          assert.match(text, /around February 2027/);
+          assert.doesNotMatch(text, /Recruitment for 2027 PhD entry is now closed|2027 recruitment is closed for all funding routes|We are not accepting new applications for 2027 entry/);
+          assert.equal(await page.locator('a[href="https://forms.gle/eEtXrfE4wuQjMP8F6"]').count(), 0, 'Clearing candidates contact by email, not the main-round form');
+        }
+        if (['index.html', 'about.html'].includes(path)) {
+          const notice = await page.locator('.news-recruitment').textContent();
+          assert.match(notice, /2027 PhD main round is closed/);
+          assert.match(notice, /no shortlisting email means your application was unsuccessful/);
+          assert.match(notice, /Exceptional HKU-PS applicants are still welcome in clearing rounds/);
+          assert.doesNotMatch(notice, /top-50|top 5%|First Class|first-author|eight months/);
+          assert.ok(notice.split(/\s+/).length < 110, 'Homepage recruitment notice stays concise');
+          assert.equal(await page.locator('.news-recruitment a[href="/join-us/#clearing-rounds"]').count(), 1);
+          assert.equal(await page.locator('.news-recruitment a[href="/join-us/#positions"]').count(), 1);
+          await page.locator('.news-recruitment a[href="/join-us/#clearing-rounds"]').click();
+          assert.equal(new URL(page.url()).hash, '#clearing-rounds');
+          assert.equal(await page.locator('#clearing-rounds').count(), 1, 'Homepage clearing link reaches detailed criteria');
+        }
+        if (path === 'join-us/') {
           assert.match(text, /The main round for 2027 PhD entry is now closed/);
           assert.match(text, /not received a shortlisting email, please consider your main-round application unsuccessful/);
-          assert.match(text, /around February 2027/);
           for (const phrase of ['HKU-PS', 'global top-50 university or a leading undergraduate university in China', 'GPA in the top 5% of your cohort', 'published first-author paper at a top-tier conference or journal', 'solid research experience']) assert.ok(text.includes(phrase), phrase);
-          assert.doesNotMatch(text, /Recruitment for 2027 PhD entry is now closed|2027 recruitment is closed for all funding routes|We are not accepting new applications for 2027 entry/);
           assert.match(text, /1 September–1 November each year/);
           assert.match(text, /at least eight months before your intended start date/);
           assert.match(text, /funded by their home university/);
           assert.match(text, /current HKU undergraduate\/postgraduate students or Hong Kong locals/i);
-          assert.equal(await page.locator('a[href="https://forms.gle/eEtXrfE4wuQjMP8F6"]').count(), 0, 'Clearing candidates contact by email, not the main-round form');
-        }
-        if (path === 'join-us/') {
+          const rankings = page.locator('.why-join__rankings:not(.why-join__rankings--university) .kpi');
+          assert.deepEqual(await rankings.locator('b').allTextContents(), ['7', '17', '18', '19', '27', '32', '32', '37']);
+          assert.match(await rankings.first().textContent(), /THE · Interdisciplinary Science · 2027/);
+          assert.equal(await rankings.first().locator('a').getAttribute('href'), 'https://www.timeshighereducation.com/world-university-rankings/interdisciplinary-science-rankings');
+          assert.doesNotMatch(text, /Interdisciplinary Science · 2026/);
+          const gradients = await rankings.locator('b').evaluateAll(numbers => numbers.map(number => getComputedStyle(number).backgroundImage));
+          assert.ok(gradients.every(gradient => gradient.includes('linear-gradient')), 'Ranking numbers retain gradients');
+          assert.equal(new Set(gradients).size, 8, 'Ranking colors progress across all eight cards');
           const clearing = await page.locator('#clearing-rounds').textContent();
           assert.match(clearing, /Applicants must meet all/);
           assert.match(clearing, /email me directly/);
