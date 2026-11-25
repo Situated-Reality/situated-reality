@@ -31,6 +31,18 @@ async function main() {
       page.on('pageerror', error => errors.push(error.message));
       for (const path of pages) {
         await page.goto(new URL(path, baseURL + '/').href);
+        const icon = page.locator('link[rel="icon"]');
+        assert.equal(await icon.count(), 1, path + ': one favicon');
+        assert.equal(await icon.getAttribute('href'), 'assets/brand/favicon-mark.png');
+        assert.equal(await icon.getAttribute('sizes'), '64x64');
+        assert.equal(await icon.evaluate(link => new URL(link.href).pathname), '/assets/brand/favicon-mark.png');
+        const iconDimensions = await icon.evaluate(async link => {
+          const image = new Image();
+          image.src = link.href;
+          await image.decode();
+          return [image.naturalWidth, image.naturalHeight];
+        });
+        assert.deepEqual(iconDimensions, [64, 64], path + ': favicon loads and decodes');
         const text = await page.locator('main').textContent();
         assert.doesNotMatch(text, /Recruitment continues · 2027 entry|Other PhD applications remain welcome|before 1 November 2026|Applications are open\./);
         assert.deepEqual(await page.locator('.site-nav a').allTextContents(), expectedNavigation);
