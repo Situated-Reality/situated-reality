@@ -4,6 +4,22 @@ const { chromium } = require('playwright');
 const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:4173';
 const pages = ['index.html', 'about.html', 'join-us/', 'team.html', 'research.html', 'publications.html', 'teaching.html'];
 const expectedNavigation = ['About', 'Team', 'Research', 'Publications', 'Teaching', 'Join us'];
+// Reviewed against the latest published editions on 25 November 2026.
+const expectedRankings = [
+  ['1', 'QS Asia · 2027'],
+  ['11', 'QS World · 2027'],
+  ['33', 'THE World · 2027'],
+  ['40', 'U.S. News Global · 2026–27'],
+  ['62', 'Shanghai ARWU · 2026'],
+  ['7', 'THE · Interdisciplinary Science · 2027'],
+  ['17', 'Shanghai GRAS · Robotic Science & Engineering · 2026'],
+  ['18', 'QS · Data Science & AI · 2026'],
+  ['19', 'Shanghai GRAS · Automation & Control · 2026'],
+  ['27', 'QS · Computer Science & Information Systems · 2026'],
+  ['32', 'QS · Statistics & Operational Research · 2026'],
+  ['32', 'Shanghai GRAS · Computer Science & Engineering · 2026'],
+  ['37', 'THE · Engineering · 2026'],
+];
 
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
@@ -53,6 +69,8 @@ async function main() {
           assert.match(text, /at least eight months before your intended start date/);
           assert.match(text, /funded by their home university/);
           assert.match(text, /current HKU undergraduate\/postgraduate students or Hong Kong locals/i);
+          assert.deepEqual(await page.locator('.why-join__rankings .kpi').evaluateAll(cards => cards.map(card => [card.querySelector('b').textContent, card.querySelector('a').textContent])), expectedRankings);
+          assert.match(text, /Rankings reviewed on 25 November 2026/);
           const rankings = page.locator('.why-join__rankings:not(.why-join__rankings--university) .kpi');
           assert.deepEqual(await rankings.locator('b').allTextContents(), ['7', '17', '18', '19', '27', '32', '32', '37']);
           assert.match(await rankings.first().textContent(), /THE · Interdisciplinary Science · 2027/);
@@ -63,6 +81,9 @@ async function main() {
           assert.equal(new Set(gradients).size, 8, 'Ranking colors progress across all eight cards');
           const clearing = await page.locator('#clearing-rounds').textContent();
           assert.match(clearing, /Applicants must meet all/);
+          assert.match(clearing, /GPA in the top 5% of your cohort \(or within the top 10% if you have an extensive publication record\)/);
+          assert.match(await page.locator('#recruitment-status').textContent(), /within the top 10% if you have an extensive publication record/);
+          assert.match(await page.locator('#faq details').filter({ has: page.locator('summary', { hasText: /^2\./ }) }).textContent(), /top-5% undergraduate GPA \(or top 10% with an extensive publication record\)/);
           assert.match(clearing, /email me directly/);
           assert.equal(await page.locator('#clearing-rounds a[href="mailto:xianghci@hku.hk"]').count(), 1);
           const criteria = await page.locator('#phd-criteria').textContent();
